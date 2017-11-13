@@ -154,7 +154,7 @@ int lookup(char * word){
 void print_TS(){\
 	int context = 1;
 	if (table == NULL){
-		printf("La tabla esta vacia ... mamon .\n");
+		printf("La tabla esta vacia ... \n");
 		return;
 	}
 	printf("\n Tabla de simbolos \n");

@@ -2,7 +2,7 @@
 
 enum stack_tack{ID, TYPE, DATA_OBJECT, TOKEN, IF, FOR, WHILE, SWITCH};
 
-enum DO_types {LITERAL, CONSTANT, ID_DO, ERROR};
+enum DO_types {LITERAL, CONSTANT, ID_DO, ERROR, WHILE};
 
 enum table_symbol_types { IDEXPR, LITERALEXPR, TEMPEXPR };
 
@@ -74,7 +74,7 @@ struct tbl_symbol{
 };
 
 /*
-// 	La tabla de símbolos es una estructura que simila una lista enlazada, 
+	La tabla de símbolos es una estructura que simila una lista enlazada, 
 	donde almacena una estructura elem que a su vez simila ser una lista de valores necesarios.
 */
 
