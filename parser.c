@@ -12,6 +12,7 @@
 //#include "beamer.c"
 FILE *myfile;
 FILE *output;
+extern void exit_semantics();
 
 typedef struct{
     int kind;
@@ -79,6 +80,6 @@ int main(int argc, char **argv){
 	//fclose(processed_file);
 	fclose(fileErrors);
 	*/
-
+	exit_semantics();
 	fclose(myfile);
 }

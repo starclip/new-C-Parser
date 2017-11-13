@@ -1,4 +1,6 @@
 #include "semantic_stack.c"
+#include <stdlib.h>
+#include <string.h>
 
 extern char* yytext;
 
@@ -8,7 +10,7 @@ void save_type_stack(){
 	struct sem_register * RS;
 	RS = create_RS (STACK_TYPE);
 	struct TYPE_data_block * type_temp = (struct TYPE_data_block*) RS->data_block;
-	type_temp->type_name = yytext;
+	type_temp->type_name = strdup(yytext);
 	//printf("Se hizo push de un registro con TIPO: %s\n", yytext);
 	push(RS);
 }
@@ -17,7 +19,7 @@ void save_id_stack(){
 	struct sem_register * RS;
 	RS = create_RS (STACK_ID);
 	struct ID_data_block * id_temp = (struct ID_data_block*) RS->data_block;
-	id_temp->text = yytext;
+	id_temp->text = strdup(yytext);
 	printf("Se hizo push de un registro con ID: %s\n", yytext);
 	push(RS);
 }
@@ -30,7 +32,7 @@ void end_decl(){
 		struct ID_data_block * id = (struct ID_data_block*) top->data_block;
 		insert_TS (id->text, type->type_name);
 		pop();
-		//printf("Se ha popeado e insertado en la TS\n");
+		printf("Se ha popeado e insertado en la TS\n");
 	}
 	pop();
 }
@@ -53,8 +55,8 @@ void insert_TS(char *id, char *type){
 		table->table_current->current->next = (struct elem *) malloc (sizeof(struct elem));
 		table->table_current->current = table->table_current->current->next;
 	}
-	table->table_current->current->name = id;
-	table->table_current->current->type = type;
+	table->table_current->current->name = strdup(id);
+	table->table_current->current->type = strdup(type);
 }
 
 void add_new_TS(){
@@ -66,10 +68,11 @@ void add_new_TS(){
 		table->table_current->next = NULL; 
 		return;
 	}
+	printf("Se va a caer...\n");
 	table->table_current->next = (struct tbl_symbol *) malloc (sizeof(struct tbl_symbol));
 	table->table_current = table->table_current->next;
 	table->table_current->next = NULL; 
-	//print_ST();
+	printf("Sobrevivio...\n");
 }
 
 // Revisa si hay una variable desde un contexto global.
@@ -105,7 +108,8 @@ int lookup(char * word){
 	}
 	struct elem *symbol = table->table_current->head; // Referencia a la primera tabla de simbolos de 
 	while (symbol != NULL){
-		if (strcmp(symbol->name,word) == 0){
+		//printf("ELEMENTO: %s\n", symbol->name);
+		if (strcmp(symbol->name, word) == 0){
 			return 1;
 		}
 		symbol = symbol->next;
@@ -115,13 +119,14 @@ int lookup(char * word){
 
 void ck_decl(){
 	char *id;
-	id = yytext;
+	id = yylval.sval;
+	printf("JSUGYUSGYUSGDYGDYGDIGDIUGDIGDIUDGIUD %s\n", id);
 	if(!lookup (id)){
 		process_error(id);
 	}
 }
 
-void print_ST(){\
+void print_ST(){
 	int context = 1;
 	if (table == NULL){
 		printf("La tabla esta vacia ... \n");
@@ -214,8 +219,9 @@ void eval_binary() {
 	PUSH(D.O);*/
 }
 
-void inicio_if (){
-	/*TEMP = DO.name;
+void begin_if (){
+	/*
+	TEMP = DO.name;
 	POP(); //PS
 	//Llamo a la rutina magica que cree etiquetas
 	L = generate_label ();
@@ -225,6 +231,13 @@ void inicio_if (){
 	Exit_label = L
 	Push(IF)
 	*/
+	printf("INICIO_IF\n");
+	struct sem_register * RS;
+	RS = create_RS(STACK_IF);
+	struct IF_data_block * if_temp = (struct IF_data_block*) RS->data_block;
+	if_temp->exit_label = generate_label();
+	printf("Label: %s\n", if_temp->exit_label);
+	//push(RS);
 }
 
 void inicio_else(){
@@ -312,10 +325,29 @@ void fin_for(){
 	Pop() ya no ocupo el registro semántico*/
 }
 
-void process_error(){
+void process_error(char* id){
 	struct sem_register * RS;
 	RS = create_RS(STACK_DATA_OBJECT);
 	struct DO_data_block * do_temp = (struct DO_data_block*) RS->data_block;
 	do_temp->value = DO_ERROR;
+	printf("Variable no declarada %s\n", id);
 	push(RS);
+}
+
+char* generate_label(){
+	static int label_count = 0;
+	char* new_label;
+	sprintf(new_label, "lbl%d", label_count);
+  	label_count++;
+  	return new_label;
+}
+
+void print_yytext(){
+	printf("YYTEXT: %s\n", yytext);
+}
+
+void exit_semantics(){
+	//print_stack();
+	print_ST();
+ 	kill_stack_ST();
 }

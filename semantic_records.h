@@ -43,9 +43,7 @@ struct OP_data_block{
 };
 
 struct IF_data_block{
-	union{
-		char* name;
-	};
+	char* exit_label;
 };
 
 /* Tabla de simbolos */
@@ -102,3 +100,53 @@ void end_decl();
 void insert_TS(char *id, char *type);
 
 void add_new_TS();
+
+int lookup_All(char * word);
+
+int lookup(char * word);
+
+void ck_decl();
+
+void print_ST();
+
+void kill_stack_ST();
+
+/* Semantica */
+
+void process_literal();
+
+void process_id();
+
+void process_op();
+
+void eval_binary();
+
+void begin_if ();
+
+void begin_else();
+
+void end_if();
+
+void begin_while();
+
+void eval_while();
+
+void end_while();
+
+void begin_for();
+
+void vi_inst1_for();
+
+void test_for();
+
+void redirigir_codigo();
+
+void restore_code();
+
+void end_for();
+
+void process_error();
+
+char* generate_label();
+
+void exit_semantics();

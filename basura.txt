@@ -1,8 +1,15 @@
 int main(){
 	int a, b, c, d;
     {int x, y;}
-	while(0 == 0){
-		a = 0;
+	a = 9;
+	b = 0;
+	int g = 20;
+	if(b < a){
+		a = 10;
+		b++;
+	}else{
+		a=4;
 	}
+
 	return 0;
 }

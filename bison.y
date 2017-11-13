@@ -46,7 +46,7 @@ void yyerror(const char *s);
 
 /* Unidad básica del parser ()*/
 primary_expression
-	: IDENTIFIER {ck_decl();}	
+	: IDENTIFIER
 	| constant	/*numeros*/		
 	| string				
 	| '(' expression ')'		
@@ -111,7 +111,7 @@ argument_expression_list
 
 unary_expression
 	: postfix_expression
-	| INC_OP unary_expression
+	| INC_OP {printf("INC_OP: %s\n", yytext);} unary_expression
 	| DEC_OP unary_expression
 	| unary_operator cast_expression
 	| SIZEOF unary_expression
@@ -220,7 +220,7 @@ conditional_expression
 
 assignment_expression
 	: conditional_expression
-	| unary_expression assignment_operator assignment_expression
+	| unary_expression {ck_decl();} assignment_operator assignment_expression
 	| unary_expression error assignment_expression { yyerrok; }
 	;
 
@@ -277,7 +277,7 @@ init_declarator_list
 	;
 
 init_declarator
-	: declarator '=' initializer
+	: declarator '='  initializer 
 	| declarator
 	//| error '=' initializer //{ yyerrok; }
 	//| declarator '=' error //{ yyerrok; }
@@ -484,7 +484,7 @@ direct_abstract_declarator
 initializer
 	: '{' initializer_list '}'
 	| '{' initializer_list ',' '}'
-	| assignment_expression
+	| assignment_expression 
 	;
 
 initializer_list
@@ -529,7 +529,7 @@ labeled_statement
 
 compound_statement
 	: '{' '}'
-	| '{' {printf("Open Scope\n");} block_item_list '}' {printf("Close Scope\n");}
+	| '{' {printf("Open Scope\n"); add_new_TS(); add_new_TS();} block_item_list '}' {printf("Close Scope\n");}
 	; /* HAY UN ERROR CON EL ADD NEW TS() SEGMENTATION fAULT*/
 
 block_item_list
@@ -549,13 +549,13 @@ expression_statement
 	;
 
 selection_statement
-	: IF '(' expression ')' statement ELSE statement
-	| IF '(' expression ')' statement
+	: IF {printf("INICIO_IF\n");} '(' expression ')' statement {printf("FIN_IF\n");}
+	| IF '(' expression {begin_if();} ')' statement ELSE {printf("INICIO_ELSE\n");} statement {printf("FIN_IF\n");}
 	| SWITCH '(' expression ')' statement
 	;
 
 iteration_statement
-	: {print_hola();} WHILE '(' expression ')' statement
+	: {printf("INICIO_WHILE\n");} WHILE '(' expression ')' statement
 	| DO statement WHILE '(' expression ')' ';'
 	| FOR '(' expression_statement expression_statement ')' statement
 	| FOR '(' expression_statement expression_statement expression ')' statement
@@ -715,15 +715,3 @@ void yyerror(const char *s){
 	}
 	lookLines(row, columnPar);
 }
-
-print_hola(){
-	printf("WHILE\n");
-}
-/*
-inicio_while(){
-	Crear RS “while”
-	begin_Label = nueva etiqueta();
-	exit_label = nueva etiqueta();
-	push(while)
-	generate_code(begin_label);
-}*/

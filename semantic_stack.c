@@ -125,4 +125,3 @@ void print_stack(){
 	}
 	printf("\n -------------------\n");
 }
-
