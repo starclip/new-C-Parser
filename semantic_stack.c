@@ -33,7 +33,7 @@ void pop(){
 	}
 }
 
-struct sem_register * retrieve(enum stack_tack tag){
+struct sem_register * retrieve(enum stack_tag tag){
 	struct sem_register * temp = top;
 	while (temp != NULL){
 		if (temp->tag == tag){
@@ -44,7 +44,7 @@ struct sem_register * retrieve(enum stack_tack tag){
 	return NULL; // Error en la pila no hay del tipo esperado.
 }
 
-void delete(enum stack_tack tag){
+void delete(enum stack_tag tag){
 	struct sem_register * temp = retrieve(tag);
 	if (temp == NULL){
 		return; // Error en la pila no hay del tipo esperado.
@@ -69,38 +69,38 @@ void delete(enum stack_tack tag){
 	deleteDB
 */
 
-struct sem_register * create_RS(enum stack_tack tag){
+struct sem_register * create_RS(enum stack_tag tag){
 	struct sem_register * sem_reg = (struct sem_register*) malloc(sizeof(struct sem_register)); // Creo el registro semantico de la pila.
 	sem_reg->tag = tag;
-	if (tag == ID){
+	if (tag == STACK_ID){
 		sem_reg->data_block = (struct ID_data_block*) malloc(sizeof(struct ID_data_block)); // Si es ID, creo ID_data_block.
-	}else if(tag == DATA_OBJECT){
+	}else if(tag == STACK_DATA_OBJECT){
 		sem_reg->data_block = (struct DO_data_block*) malloc(sizeof(struct DO_data_block)); // Si es DO, creo DO_data_block.
-	}else if(tag == TOKEN){
+	}else if(tag == STACK_TOKEN){
 		sem_reg->data_block = (struct OP_data_block*) malloc(sizeof(struct OP_data_block)); // Si es Token, creo el OP_data_block
-	}else if(tag == IF){
+	}else if(tag == STACK_IF){
 		sem_reg->data_block = (struct IF_data_block*) malloc(sizeof(struct IF_data_block)); // Si es IF, creo el IF_data_block
-	}else if(tag == TYPE){
+	}else if(tag == STACK_TYPE){
 		sem_reg->data_block = (struct TYPE_data_block*) malloc(sizeof(struct TYPE_data_block)); // Si es un Tipo, creo el TYPE_data_block
 	}
 	return sem_reg;
 }
 
 void delete_DB(struct sem_register * block){
-	if (block->tag == ID){
+	if (block->tag == STACK_ID){
 		struct ID_data_block * id_temp = (struct ID_data_block*) block->data_block;
 		//free(id_temp->text);
-	}else if(block->tag == DATA_OBJECT){
+	}else if(block->tag == STACK_DATA_OBJECT){
 		struct DO_data_block * do_temp = (struct DO_data_block*) block->data_block;
 		//free(do_temp->name);
 		//free(do_temp->value);
-	}else if(block->tag == TOKEN){
+	}else if(block->tag == STACK_TOKEN){
 		struct OP_data_block * op_temp = (struct OP_data_block*) block->data_block;
 		//free(op_temp->operator);
-	}else if(block->tag == IF){
+	}else if(block->tag == STACK_IF){
 		struct IF_data_block * if_temp = (struct IF_data_block*) block->data_block;
 		//free(if_temp->name);
-	}else if(block->tag == TYPE){
+	}else if(block->tag == STACK_TYPE){
 		struct TYPE_data_block * type_temp = (struct TYPE_data_block*) block->data_block;
 		//free(type_temp->type_name);
 	}

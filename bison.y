@@ -2,6 +2,7 @@
 
 %{
 #include <stdio.h>
+#include "semantic_actions.c"
 #define YYERROR_VERBOSE 1
 // datos importantes.
 extern int yylex();
@@ -16,7 +17,7 @@ void yyerror(const char *s);
 }
 
 /* Identificadores o valores con datos -> (5, "", CON) */
-%token <sval> IDENTIFIER 
+%token <sval> IDENTIFIER
 %token <sval> I_CONSTANT
 %token <sval> F_CONSTANT
 %token <sval> STRING_LITERAL
@@ -45,13 +46,13 @@ void yyerror(const char *s);
 
 /* Unidad básica del parser ()*/
 primary_expression
-	: IDENTIFIER		
-	| constant				
-	| string					
+	: IDENTIFIER {ck_decl();}	
+	| constant	/*numeros*/		
+	| string				
 	| '(' expression ')'		
 	| generic_selection 	
-	| '(' error ')'	{ yyerrok; }
-	| '(' expression error { yyerrok; }
+	| '(' error ')'	{ yyerrok; printf("ERROR\n");}
+	| '(' expression error { yyerrok; printf("ERROR\n");}
 	;
 
 constant
@@ -61,7 +62,7 @@ constant
 	;
 
 enumeration_constant		/* before it has been defined as such */
-	: IDENTIFIER
+	: IDENTIFIER {save_id_stack();}
 	;
 
 string
@@ -91,8 +92,8 @@ postfix_expression
 	| postfix_expression '[' expression ']'
 	| postfix_expression '(' ')'
 	| postfix_expression '(' argument_expression_list ')'
-	| postfix_expression '.' IDENTIFIER
-	| postfix_expression PTR_OP IDENTIFIER
+	| postfix_expression '.' IDENTIFIER {save_id_stack();}
+	| postfix_expression PTR_OP IDENTIFIER {save_id_stack();}
 	| postfix_expression INC_OP
 	| postfix_expression DEC_OP
 	| '(' type_name ')' '{' initializer_list '}'
@@ -249,7 +250,7 @@ constant_expression
 
 declaration
 	: declaration_specifiers ';'
-	| declaration_specifiers init_declarator_list ';'
+	| declaration_specifiers init_declarator_list ';' {end_decl();}
 	| static_assert_declaration
 	| error ';'  { yyerrok; }
 	| declaration_specifiers error ';' { yyerrok; }
@@ -295,7 +296,7 @@ type_specifier
 	: VOID
 	| CHAR
 	| SHORT
-	| INT
+	| {save_type_stack();} INT
 	| LONG
 	| FLOAT
 	| DOUBLE
@@ -313,7 +314,7 @@ type_specifier
 struct_or_union_specifier
 	: struct_or_union '{' struct_declaration_list '}'
 	| struct_or_union IDENTIFIER '{' struct_declaration_list '}'
-	| struct_or_union IDENTIFIER
+	| struct_or_union IDENTIFIER {save_id_stack();}
 	;
 
 struct_or_union
@@ -353,9 +354,9 @@ struct_declarator
 enum_specifier
 	: ENUM '{' enumerator_list '}'
 	| ENUM '{' enumerator_list ',' '}'
-	| ENUM IDENTIFIER '{' enumerator_list '}'
-	| ENUM IDENTIFIER '{' enumerator_list ',' '}'
-	| ENUM IDENTIFIER
+	| ENUM IDENTIFIER {save_id_stack();} '{' enumerator_list '}'
+	| ENUM IDENTIFIER {save_id_stack();} '{' enumerator_list ',' '}'
+	| ENUM IDENTIFIER {save_id_stack();}
 	;
 
 enumerator_list
@@ -395,7 +396,7 @@ declarator
 	;
 
 direct_declarator
-	: IDENTIFIER
+	: IDENTIFIER {save_id_stack();}
 	| '(' declarator ')'
 	| direct_declarator '[' ']'
 	| direct_declarator '[' '*' ']'
@@ -441,8 +442,8 @@ parameter_declaration
 	;
 
 identifier_list
-	: IDENTIFIER
-	| identifier_list ',' IDENTIFIER
+	: IDENTIFIER {save_id_stack();}
+	| IDENTIFIER {save_id_stack();} ',' identifier_list
 	;
 
 type_name
@@ -504,7 +505,7 @@ designator_list
 
 designator
 	: '[' constant_expression ']'
-	| '.' IDENTIFIER
+	| '.' IDENTIFIER {save_id_stack();}
 	;
 
 static_assert_declaration
@@ -521,15 +522,15 @@ statement
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement
+	: IDENTIFIER {save_id_stack();} ':' statement
 	| CASE constant_expression ':' statement
 	| DEFAULT ':' statement
 	;
 
 compound_statement
 	: '{' '}'
-	| '{'  block_item_list '}'
-	;
+	| '{' {printf("Open Scope\n");} block_item_list '}' {printf("Close Scope\n");}
+	; /* HAY UN ERROR CON EL ADD NEW TS() SEGMENTATION fAULT*/
 
 block_item_list
 	: block_item
@@ -567,7 +568,7 @@ iteration_statement
 	;
 
 jump_statement
-	: GOTO IDENTIFIER ';'
+	: GOTO IDENTIFIER {save_id_stack();} ';'
 	| CONTINUE ';'
 	| BREAK ';'
 	| RETURN ';'
@@ -716,7 +717,7 @@ void yyerror(const char *s){
 }
 
 print_hola(){
-	printf("HOLA HOLA HOLA\n");
+	printf("WHILE\n");
 }
 /*
 inicio_while(){

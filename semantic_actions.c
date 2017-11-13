@@ -1,78 +1,39 @@
 #include "semantic_stack.c"
 
-char *yytext = "Message"; 
-int column = 0;
-int row = 0;
+extern char* yytext;
+
+// Funciones con la pila //
 
 void save_type_stack(){
 	struct sem_register * RS;
-	RS = create_RS (TYPE);
+	RS = create_RS (STACK_TYPE);
 	struct TYPE_data_block * type_temp = (struct TYPE_data_block*) RS->data_block;
 	type_temp->type_name = yytext;
-	type_temp->row = row;
-	type_temp->column = column;
+	//printf("Se hizo push de un registro con TIPO: %s\n", yytext);
 	push(RS);
 }
 
 void save_id_stack(){
 	struct sem_register * RS;
-	RS = create_RS (ID);
+	RS = create_RS (STACK_ID);
 	struct ID_data_block * id_temp = (struct ID_data_block*) RS->data_block;
 	id_temp->text = yytext;
-	id_temp->row = row;
-	id_temp->column = column;
+	printf("Se hizo push de un registro con ID: %s\n", yytext);
 	push(RS);
 }
 
 void end_decl(){
 	struct sem_register * RS;
-	RS = retrieve(TYPE);
+	RS = retrieve(STACK_TYPE);
 	struct TYPE_data_block * type = (struct TYPE_data_block*) RS->data_block;
-	while(top->tag == ID){
+	while(top->tag == STACK_ID){
 		struct ID_data_block * id = (struct ID_data_block*) top->data_block;
 		insert_TS (id->text, type->type_name);
 		pop();
+		//printf("Se ha popeado e insertado en la TS\n");
 	}
 	pop();
 }
-
-void process_literal(){
-	struct sem_register * RS;
-	RS = create_RS(DATA_OBJECT);
-	struct DO_data_block * do_temp = (struct DO_data_block*) RS->data_block;
-	do_temp->data_type = LITERAL;
-	do_temp->value = yytext;
-	do_temp->row = row;
-	do_temp->column = column;
-	push(RS);
-}
-
-void process_id(){
-	struct sem_register * RS;
-	char *id;
-	id = yytext;
-	RS = create_RS(DATA_OBJECT);
-	struct DO_data_block * do_temp = (struct DO_data_block*) RS->data_block;
-	do_temp->data_type = ID_DO;
-	/* funcion de lookupTS
-	*/
-	do_temp->name = id;
-	do_temp->row = row;
-	do_temp->column = column;
-	push(RS);
-}
-
-void process_op(){
-	struct sem_register * RS;
-	RS = create_RS(TOKEN);
-	struct OP_data_block * op_temp = (struct OP_data_block*) RS->data_block;
-	op_temp->operator = yytext;
-	op_temp->row = row;
-	op_temp->column = column;
-	push(RS);
-}
-
-// Funciones con la pila //
 
 void insert_TS(char *id, char *type){
 	if (table == NULL){
@@ -108,6 +69,7 @@ void add_new_TS(){
 	table->table_current->next = (struct tbl_symbol *) malloc (sizeof(struct tbl_symbol));
 	table->table_current = table->table_current->next;
 	table->table_current->next = NULL; 
+	//print_ST();
 }
 
 // Revisa si hay una variable desde un contexto global.
@@ -151,7 +113,15 @@ int lookup(char * word){
 	return isInTheTable;
 }
 
-void print_TS(){\
+void ck_decl(){
+	char *id;
+	id = yytext;
+	if(!lookup (id)){
+		process_error(id);
+	}
+}
+
+void print_ST(){\
 	int context = 1;
 	if (table == NULL){
 		printf("La tabla esta vacia ... \n");
@@ -164,7 +134,7 @@ void print_TS(){\
 		// Revise todos los valores de esa tabla.
 		struct elem * elem_temp = table_temp->head;
 		while(elem_temp != NULL){
-			printf(" ---- %s %s; \n",elem_temp->type, elem_temp->name);
+			printf(" ---- %s %s \n",elem_temp->type, elem_temp->name);
 			elem_temp = elem_temp->next;
 		}
 		table_temp = table_temp->next;
@@ -172,7 +142,7 @@ void print_TS(){\
 	}
 }
 
-void kill_symbol_table(){
+void kill_stack_ST(){
 	if (table == NULL){
 		return;
 	}
@@ -192,56 +162,160 @@ void kill_symbol_table(){
 	free(table);
 }
 
-int main(){
+/* Semantica */
+
+void process_literal(){
+	struct sem_register * RS;
+	RS = create_RS(STACK_DATA_OBJECT);
+	struct DO_data_block * do_temp = (struct DO_data_block*) RS->data_block;
+	do_temp->data_type = DO_LITERAL;
+	do_temp->value = yytext;
+	push(RS);
+}
+
+void process_id(){
+	struct sem_register * RS;
+	char *id;
+	id = yytext;
+	RS = create_RS(STACK_DATA_OBJECT);
+	struct DO_data_block * do_temp = (struct DO_data_block*) RS->data_block;
 	
-	// Creo la primera tabla.
-	yytext = "int";
-	save_type_stack();
-	yytext = "cabea";
-	save_id_stack();
-	end_decl();
-	yytext = "char";
-	save_type_stack();
-	yytext = "salada";
-	save_id_stack();
-	end_decl();
-	yytext = "int";
-	save_type_stack();
-	yytext = "store";
-	save_id_stack();
-	end_decl();
+	if(lookup (id)){
+		do_temp->data_type = DO_ID;
+		do_temp->name = id;
+	}else{
+		do_temp->data_type = DO_ERROR;
+	}
+	push(RS);
+}
 
-	// Agrego una tabla de simbolos a la pila.
-	add_new_TS();
-	yytext = "int";
-	save_type_stack();
-	yytext = "com";
-	save_id_stack();
-	end_decl();
+void process_op(){
+	struct sem_register * RS;
+	RS = create_RS(STACK_TOKEN);
+	struct OP_data_block * op_temp = (struct OP_data_block*) RS->data_block;
+	op_temp->operator = yytext;
+	push(RS);
+}
 
-	// Agrego una nueva tabla de simbolos a la pila.
-	add_new_TS();
-	yytext = "int";
-	save_type_stack();
-	yytext = "cont";
-	save_id_stack();
-	end_decl();
-	yytext = "char";
-	save_type_stack();
-	yytext = "specify";
-	save_id_stack();
-	end_decl();
+void eval_binary() {
+	/*op1 = POP();
+	operador = POP();
+	op2 = POP();
+	Si alguno es de tipo ERROR: Crear D.O de tipo ERROR;
+	else:
+	Si no se requiere generar código: Crear D.O con resultado  calculado; //verificar todos los casos
+	else:
+	Crear variable temporal; //crear esta función
+	Generar código para temporal con op1, operador, op2; //verificar
+	para cada operador
+	Crear D.O con referencia a temporal;
+	}
+	}
+	PUSH(D.O);*/
+}
 
-	int x = lookup("cont");
-	int m = lookup("trake");
-	int k = lookup("cabea");
-	int r = lookup_All("cabea");
-	printf("Esta 'cont' en contexto local de la tabla : %d \n", x);
-	printf("Esta 'trake' en contexto local de la tabla : %d \n", m);
-	printf("Esta 'cabea' en contexto local de la tabla : %d\n", k);
-	printf("Esta 'cabea' en contexto global de la tabla : %d\n", r);
-	print_TS();
-	kill_stack();
-	kill_symbol_table(); // Elimina todos los valores reservados de memoria con relacion a la tabla de simbolos
-	return 0;
+void inicio_if (){
+	/*TEMP = DO.name;
+	POP(); //PS
+	//Llamo a la rutina magica que cree etiquetas
+	L = generate_label ();
+	/*generate_label () s facil, variable entera tipo static. Static local,
+	global privada solo para guardar el numero actual de L
+	//Generar codigo que sea equivalente a BZ TEMP, L
+	Exit_label = L
+	Push(IF)
+	*/
+}
+
+void inicio_else(){
+	/*//Si todo esta bien, cuando corra, tiene que estar en la PS, un RS tipo If
+	//Genera el JMP L2
+	Retrieve (IF)
+	//Tengo a mano L2 y L1
+	//Genera el JMP a L2
+	//Genera etiqueta L1
+	*/
+}
+
+void fin_if(){
+	/*
+	Retrieve (IF);
+	genera_codigo(L) //para poner la etiqueta
+	Delete (IF)
+	*/
+}
+
+void inicio_while() {
+	/*Crear RS “while”
+	begin_Label←nueva etiqueta();
+	exit_label←nueva etiqueta();
+	push(while)
+	generate_code(begin_label);
+	*/
+}
+void eval_while() {
+	/*variable= DO; pop();
+	ExitLabel= while_exit;
+	generate_code(CMP Temp , 0);
+	generate_code(JZ exit);
+	fin_while()*/
+}
+
+void fin_while(){	
+	/*begin label  while...
+	end label  while…
+	Pop();
+	generate_code(JMP begin)
+	generate_code(Exit:)*/
+}
+
+void begin_for() {
+	/*Create_RS(FOR)
+	begin_label
+	exit_label
+	inst3 = generar_temp()
+	NOTA: este puede ser puede ser puntero a bloque, nombre de archivo temporal
+	para inst3.
+	push();*/
+}
+
+void vi_inst1_for() {
+	/*Retrieve(for)
+	begin  for
+	generate_code(begin)*/
+}
+
+void test_for(){
+	/*Retrieve(DO)
+	temp  DO
+	pop();
+	retrieve(for)
+	generate_code(cmp temp,0)
+	generate_code(jz,exit)*/
+}
+/*
+void redirigir_codigo() ​{
+	//Aqui iria el codigo para el archivo temporal
+}
+*/
+void restore_code() {
+	//redirige para que el que traduzca bloque instrucciones siga generando el código
+}
+
+void fin_for(){
+	/*voy al registro semántico tipo for
+	Ahí está puntero a instrucción 3
+	Leo de archivo oficial
+	Destruyó archivo temporal
+	Generate_code(jmp begin)
+	Generate_code(jmp exit)
+	Pop() ya no ocupo el registro semántico*/
+}
+
+void process_error(){
+	struct sem_register * RS;
+	RS = create_RS(STACK_DATA_OBJECT);
+	struct DO_data_block * do_temp = (struct DO_data_block*) RS->data_block;
+	do_temp->value = DO_ERROR;
+	push(RS);
 }

@@ -1,36 +1,31 @@
 // Variables usadas por la pila semantica
 
-enum stack_tack{ID, TYPE, DATA_OBJECT, TOKEN, IF, FOR, WHILE, SWITCH};
+enum stack_tag{STACK_ID, STACK_TYPE, STACK_DATA_OBJECT, STACK_TOKEN, 
+				STACK_IF, STACK_FOR, STACK_WHILE, STACK_SWITCH};
 
-enum DO_types {LITERAL, CONSTANT, ID_DO, ERROR, WHILE};
+enum DO_types {DO_LITERAL, DO_CONSTANT, DO_ID, DO_ERROR, DO_WHILE};
 
-enum table_symbol_types { IDEXPR, LITERALEXPR, TEMPEXPR };
+enum table_symbol_types { TST_IDEXPR, TST_LITERALEXPR, TST_TEMPEXPR };
 
 /* Pila Semantica */
 
 struct sem_register {
 	struct sem_register * next;
 	struct sem_register * previous;
-	enum stack_tack tag;
+	enum stack_tag tag;
 	void * data_block;
 };
 
 /* Bloques de datos  */
 
 struct ID_data_block{
-	union{
-		char* text;
-	};
-	int row;
-	int column;
+	char* text;
 };
 
 struct TYPE_data_block{
 	union{
 		char* type_name;
 	};
-	int row;
-	int column;
 };
 
 struct DO_data_block{
@@ -39,16 +34,12 @@ struct DO_data_block{
 		char* name;
 		char* value;
 	};
-	int row;
-	int column;
 };
 
 struct OP_data_block{
 	union{
 		char* operator;
 	};
-	int row;
-	int column;
 };
 
 struct IF_data_block{
@@ -92,11 +83,11 @@ void push(struct sem_register *rs);
 
 void pop();
 
-struct sem_register * retrieve(enum stack_tack tag);
+struct sem_register * retrieve(enum stack_tag tag);
 
-void delete(enum stack_tack tag);
+void delete(enum stack_tag tag);
 
-struct sem_register * create_RS(enum stack_tack tag);
+struct sem_register * create_RS(enum stack_tag tag);
 
 void delete_DB(struct sem_register * block);
 
